@@ -21,7 +21,7 @@ Use R2ModMan or similar installer to install this plugin.
 Reference this dependency plugin in the parent plugin and then use the following syntax to add a chat
 service:
 
-```handlers.Add(serviceKey, handler)```
+```ChatServicePlugin.handlers.Add(serviceKey, handler)```
 
 Where the service key is a string that must appear at the beginning of the chat message in order to trip
 the corresponding handler.
