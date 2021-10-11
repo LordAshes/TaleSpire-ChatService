@@ -34,6 +34,7 @@ from being displayed.
 An example of adding a inline handler for "/w" function would be:
 
 ```
-ChatServicePlugin.handlers.Add("/w ", (chatMessage, sender, source)=> { Debug.Log(sender+" whispered "+chatMessage); });```
+ChatServicePlugin.handlers.Add("/w ", (chatMessage, sender, source)=> { Debug.Log(sender+" whispered "+chatMessage); });
+```
 
 
