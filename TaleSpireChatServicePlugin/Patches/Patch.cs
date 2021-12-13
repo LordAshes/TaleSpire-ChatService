@@ -7,8 +7,6 @@ using Bounce.Singletons;
 using Bounce.Unmanaged;
 using GameChat.UI;
 using HarmonyLib;
-using Newtonsoft.Json;
-using TMPro;
 using UnityEngine;
 
 namespace LordAshes
