@@ -56,6 +56,7 @@ by the user from the chat. This can be done by using the core TS function:
 ``ChatManager.SendChatMessage(message, sender)``
 
 Where *message* is the content to be sent and should include the handling prefix.
+
 Where *sender* is the NGuid of either a creature mini (CreatureId) or player (PlayerId).
 
 For example, to use the above hander for "/w" assuming it is a whisper message to the GM:
