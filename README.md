@@ -7,6 +7,8 @@ as whispers or dice rolling functionality.
  
 ## Change Log
 
+1.1.1: Fixed soft dependency check to avoid exception when soft dependency is not found
+1.1.1: Corrected dependency list to include FileAccessPlugin
 1.1.0: Added optional deselect action to the character radial menu to deselect the mini and returns
        the chat box input back to speaking a player (and not creature). Can be turned on or off in
 	   the R2ModMan settings for plugin. If on, requires RadialUI plugin. If off, RadialUI plugin is
