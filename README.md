@@ -46,7 +46,19 @@ from being displayed.
 
 An example of adding a inline handler for "/w" function would be:
 
-```
-handlers.Add("/w ", (chatMessage, sender, source)=> { Debug.Log(sender+" whispered "+chatMessage); });```
+``handlers.Add("/w ", (chatMessage, sender, source)=> { Debug.Log(sender+" whispered "+chatMessage); });``
 
+### Usage programatically
+
+You can also use this function for sending messages to other clients without having the request triggered
+by the user from the chat. This can be done by using the core TS function:
+
+``ChatManager.SendChatMessage(message, sender)``
+
+Where *message* is the content to be sent and should include the handling prefix.
+Where *sender* is the NGuid of either a creature mini (CreatureId) or player (PlayerId).
+
+For example, to use the above hander for "/w" assuming it is a whisper message to the GM:
+
+``ChatManager.SendChatMessage("/w I pickpocket the person I am speaking to", LocalPlayer.Id.Value)``
 
