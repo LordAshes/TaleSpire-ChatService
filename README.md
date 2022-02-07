@@ -1,5 +1,4 @@
 # Chat Service Plugin
-# Chat Service Plugin
 
 This unofficial TaleSpire plugin is a dependency plugin for creating local chat service functionality.
 The plugin allows registering of key words with corresponding handlders to create functionality such
