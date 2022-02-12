@@ -82,6 +82,9 @@
     <Reference Include="RadialUI">
       <HintPath>..\..\..\..\AppData\Roaming\r2modmanPlus-local\TaleSpire\profiles\Modded\BepInEx\plugins\HolloFox_TS-RadialUIPlugin\RadialUI.dll</HintPath>
     </Reference>
+    <Reference Include="SourceRole">
+      <HintPath>..\..\TaleSpireAssetDataPlugin\SourceRole\bin\Debug\SourceRole.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
@@ -143,6 +146,5 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

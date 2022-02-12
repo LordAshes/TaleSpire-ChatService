@@ -18,6 +18,14 @@ namespace LordAshes
         {
             public static bool Prefix(string creatureName, Texture2D icon, ref string chatMessage, UIChatMessageManager.IChatFocusable focus = null)
             {
+                foreach (KeyValuePair<string, Func<string, string, Talespire.SourceRole, string>> handler in ChatServicePlugin.chatMessgeServiceHandlers)
+                {
+                    if (chatMessage.StartsWith(handler.Key))
+                    {
+                        chatMessage = handler.Value(chatMessage, creatureName, (Talespire.SourceRole)FindSource(creatureName));
+                        if (chatMessage == null) { return false; }
+                    }
+                }
                 foreach (KeyValuePair<string, Func<string, string, ChatSource, string>> handler in ChatServicePlugin.handlers)
                 {
                     if (chatMessage.StartsWith(handler.Key))
@@ -35,6 +43,14 @@ namespace LordAshes
         {
             public static bool Prefix(string title, ref string message, UIChatMessageManager.IChatFocusable focus = null)
             {
+                foreach (KeyValuePair<string, Func<string, string, Talespire.SourceRole, string>> handler in ChatServicePlugin.chatMessgeServiceHandlers)
+                {
+                    if (message.StartsWith(handler.Key))
+                    {
+                        message = handler.Value(message, title, (Talespire.SourceRole)FindSource(title));
+                        if (message == null) { return false; }
+                    }
+                }
                 foreach (KeyValuePair<string, Func<string, string, ChatSource, string>> handler in ChatServicePlugin.handlers)
                 {
                     if (message.StartsWith(handler.Key))
@@ -99,6 +115,7 @@ namespace LordAshes
 
         private static ChatSource FindSource(string name)
         {
+            if (name.ToUpper() == "ANONYMOUS") { return ChatSource.anonymous; }
             foreach(CreatureBoardAsset asset in CreaturePresenter.AllCreatureAssets)
             {
                 if(asset.Creature.Name.StartsWith(name))
@@ -113,7 +130,7 @@ namespace LordAshes
                     if (player.Value.Rights.CanGm) { return ChatSource.gm; } else { return ChatSource.player; }
                 }
             }
-            return ChatSource.anonymous;
+            return ChatSource.other;
         }
     }
 }
