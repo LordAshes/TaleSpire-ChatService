@@ -6,6 +6,7 @@ as whispers or dice rolling functionality.
  
 ## Change Log
 
+```
 1.2.0: Added ChatMessageService class for proper subscription and sending handling and AssetData support.
 1.1.2: Corrected documentation. No plugin change.
 1.1.1: Fixed soft dependency check to avoid exception when soft dependency is not found
@@ -14,12 +15,10 @@ as whispers or dice rolling functionality.
        the chat box input back to speaking a player (and not creature). Can be turned on or off in
 	   the R2ModMan settings for plugin. If on, requires RadialUI plugin. If off, RadialUI plugin is
 	   not needed.
-	   
 1.0.1: Added source in the handler to distinguish messages from gm, player or creature.
-
 1.0.1: Fixed bug when using multiple hanlders and one returns a null.
-
 1.0.0: Initial release
+```
 
 ## Install
 
