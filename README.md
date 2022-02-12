@@ -47,8 +47,7 @@ from being displayed.
 
 An example of adding a inline handler for "/w" function would be:
 
-```
-handlers.Add("/w ", (chatMessage, sender, source)=> { Debug.Log(sender+" whispered "+chatMessage); });```
+```handlers.Add("/w ", (chatMessage, sender, source)=> { Debug.Log(sender+" whispered "+chatMessage); });```
 
 ### Usage programatically
 
