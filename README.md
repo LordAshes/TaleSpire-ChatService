@@ -6,6 +6,8 @@ as whispers or dice rolling functionality.
  
 ## Change Log
 
+1.2.0: Added ChatMessageService class for proper subscription and sending handling and AssetData support.
+1.1.2: Corrected documentation. No plugin change.
 1.1.1: Fixed soft dependency check to avoid exception when soft dependency is not found
 1.1.1: Corrected dependency list to include FileAccessPlugin
 1.1.0: Added optional deselect action to the character radial menu to deselect the mini and returns
@@ -46,7 +48,8 @@ from being displayed.
 
 An example of adding a inline handler for "/w" function would be:
 
-``handlers.Add("/w ", (chatMessage, sender, source)=> { Debug.Log(sender+" whispered "+chatMessage); });``
+```
+handlers.Add("/w ", (chatMessage, sender, source)=> { Debug.Log(sender+" whispered "+chatMessage); });```
 
 ### Usage programatically
 
@@ -56,7 +59,6 @@ by the user from the chat. This can be done by using the core TS function:
 ``ChatManager.SendChatMessage(message, sender)``
 
 Where *message* is the content to be sent and should include the handling prefix.
-
 Where *sender* is the NGuid of either a creature mini (CreatureId) or player (PlayerId).
 
 For example, to use the above hander for "/w" assuming it is a whisper message to the GM:
