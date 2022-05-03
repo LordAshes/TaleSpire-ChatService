@@ -27,6 +27,19 @@ namespace LordAshes
             anonymous = 999
         }
 
+        public class Talespire
+        {
+            public enum SourceRole
+            {
+                gm = 0,
+                player = 1,
+                creature = 2,
+                hideVolume = 3,
+                other = 888,
+                anonymous = 999
+            }
+        }
+
         public static Dictionary<string, Func<string, string, ChatSource, string>> handlers = new Dictionary<string, Func<string, string, ChatSource, string>>();
         
         private static Dictionary<string, Func<string, string, Talespire.SourceRole, string>> chatMessgeServiceHandlers = new Dictionary<string, Func<string, string, Talespire.SourceRole, string>>();
@@ -57,8 +70,8 @@ namespace LordAshes
                         CreaturePresenter.TryGetAsset(LocalClient.SelectedCreatureId, out asset);
                         if (asset != null)
                         {
-                            Debug.Log("Chat Service Plugin: Deselecting '" + asset.Creature.Name.Substring(0, asset.Creature.Name.IndexOf("<")) + "' (" + asset.Creature.CreatureId + ").");
-                            asset.Creature.Deselect();
+                            Debug.Log("Chat Service Plugin: Deselecting '" + asset.Name.Substring(0, asset.Name.IndexOf("<")) + "' (" + asset.CreatureId + ").");
+                            asset.Deselect();
                             LocalClient.SelectedCreatureId = CreatureGuid.Empty;
                             ChatInputBoardTool __instance = GameObject.FindObjectOfType<ChatInputBoardTool>();
                             PatchAssistant.SetField(__instance, "_selectedCreature", null);

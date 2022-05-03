@@ -118,7 +118,7 @@ namespace LordAshes
             if (name.ToUpper() == "ANONYMOUS") { return ChatSource.anonymous; }
             foreach(CreatureBoardAsset asset in CreaturePresenter.AllCreatureAssets)
             {
-                if(asset.Creature.Name.StartsWith(name))
+                if(asset.Name.StartsWith(name))
                 {
                     return ChatSource.creature;
                 }
