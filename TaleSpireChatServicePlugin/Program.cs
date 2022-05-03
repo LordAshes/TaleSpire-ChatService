@@ -27,19 +27,6 @@ namespace LordAshes
             anonymous = 999
         }
 
-        public class Talespire
-        {
-            public enum SourceRole
-            {
-                gm = 0,
-                player = 1,
-                creature = 2,
-                hideVolume = 3,
-                other = 888,
-                anonymous = 999
-            }
-        }
-
         public static Dictionary<string, Func<string, string, ChatSource, string>> handlers = new Dictionary<string, Func<string, string, ChatSource, string>>();
         
         private static Dictionary<string, Func<string, string, Talespire.SourceRole, string>> chatMessgeServiceHandlers = new Dictionary<string, Func<string, string, Talespire.SourceRole, string>>();
