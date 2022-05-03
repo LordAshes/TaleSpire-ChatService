@@ -57,8 +57,8 @@ namespace LordAshes
                         CreaturePresenter.TryGetAsset(LocalClient.SelectedCreatureId, out asset);
                         if (asset != null)
                         {
-                            Debug.Log("Chat Service Plugin: Deselecting '" + asset.Creature.Name.Substring(0, asset.Creature.Name.IndexOf("<")) + "' (" + asset.Creature.CreatureId + ").");
-                            asset.Creature.Deselect();
+                            Debug.Log("Chat Service Plugin: Deselecting '" + asset.Name.Substring(0, asset.Name.IndexOf("<")) + "' (" + asset.CreatureId + ").");
+                            asset.Deselect();
                             LocalClient.SelectedCreatureId = CreatureGuid.Empty;
                             ChatInputBoardTool __instance = GameObject.FindObjectOfType<ChatInputBoardTool>();
                             PatchAssistant.SetField(__instance, "_selectedCreature", null);
