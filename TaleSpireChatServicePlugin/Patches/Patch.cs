@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 
 using BepInEx;
-using Bounce.Singletons;
-using Bounce.Unmanaged;
 using GameChat.UI;
 using HarmonyLib;
 using UnityEngine;
@@ -13,26 +10,25 @@ namespace LordAshes
 {
     public partial class ChatServicePlugin : BaseUnityPlugin
     {
+        #region Patches
+
         [HarmonyPatch(typeof(UIChatMessageManager), "AddChatMessage")]
         public static class PatchAddChatMessage
         {
-            public static bool Prefix(string creatureName, Texture2D icon, ref string chatMessage, UIChatMessageManager.IChatFocusable focus = null)
+            public static bool Prefix(ref string creatureName, Texture2D icon, ref string chatMessage, UIChatMessageManager.IChatFocusable focus = null)
             {
-                foreach (KeyValuePair<string, Func<string, string, Talespire.SourceRole, string>> handler in ChatServicePlugin.chatMessgeServiceHandlers)
+                if (ChatServicePlugin.diagnostics.Value >= DiagnosticSelection.high) { Debug.Log("Chat Service Plugin: AddEventMessage Patch"); }
+
+                string speaker = creatureName;
+                ApplyAliases(ref chatMessage);
+                ProcessMessage(ref creatureName, ref chatMessage);
+                if (chatMessage == null || (chatMessage.Trim() == "" && creatureName == speaker))
                 {
-                    if (chatMessage.StartsWith(handler.Key))
-                    {
-                        chatMessage = handler.Value(chatMessage, creatureName, (Talespire.SourceRole)FindSource(creatureName));
-                        if (chatMessage == null) { return false; }
-                    }
+                    return false;
                 }
-                foreach (KeyValuePair<string, Func<string, string, ChatSource, string>> handler in ChatServicePlugin.handlers)
+                if(logFileNamePrefix.Value.Trim()!="")
                 {
-                    if (chatMessage.StartsWith(handler.Key))
-                    {
-                        chatMessage = handler.Value(chatMessage, creatureName, FindSource(creatureName));
-                        if (chatMessage == null) { return false; }
-                    }
+                    LogChatMessage(creatureName, chatMessage);
                 }
                 return true;
             }
@@ -41,96 +37,147 @@ namespace LordAshes
         [HarmonyPatch(typeof(UIChatMessageManager), "AddEventMessage")]
         public static class PatchAddEventMessage
         {
-            public static bool Prefix(string title, ref string message, UIChatMessageManager.IChatFocusable focus = null)
+            public static bool Prefix(ref string title, ref string message, UIChatMessageManager.IChatFocusable focus = null)
             {
-                foreach (KeyValuePair<string, Func<string, string, Talespire.SourceRole, string>> handler in ChatServicePlugin.chatMessgeServiceHandlers)
+                if (ChatServicePlugin.diagnostics.Value >= DiagnosticSelection.high) { Debug.Log("Chat Service Plugin: AddEventMessage Patch"); }
+
+                string speaker = title;
+                ApplyAliases(ref message);
+                ProcessMessage(ref title, ref message);
+                if(message==null || (message.Trim()=="" && title==speaker))
                 {
-                    if (message.StartsWith(handler.Key))
-                    {
-                        message = handler.Value(message, title, (Talespire.SourceRole)FindSource(title));
-                        if (message == null) { return false; }
-                    }
+                    return false;
                 }
-                foreach (KeyValuePair<string, Func<string, string, ChatSource, string>> handler in ChatServicePlugin.handlers)
+                if (logFileNamePrefix.Value.Trim() != "")
                 {
-                    if (message.StartsWith(handler.Key))
-                    {
-                        message = handler.Value(message, title, FindSource(title));
-                        if (message == null) { return false; }
-                    }
+                    LogEventMessage(title, message);
                 }
                 return true;
             }
         }
 
-        [HarmonyPatch(typeof(ChatInputBoardTool), "InputOnOnTextSubmit")]
-        public static class PatchInputOnOnTextSubmit
+        [HarmonyPatch(typeof(UIChatMessageManager), "AddDiceResultMessage")]
+        public static class PatchAddDiceResultMessage
         {
-            public static bool Prefix(string text)
+            public static bool Prefix(DiceManager.RollResults diceResult, UIChatMessageManager.DiceResultsReference.ResultsOrigin origin, ClientGuid sender, bool hidden)
             {
-                return false;
-            }
-
-            public static void Postfix(string text)
-            {
-                ChatInputBoardTool __instance = GameObject.FindObjectOfType<ChatInputBoardTool>();
-                if (string.IsNullOrEmpty(text) || !SimpleSingletonBehaviour<ChatManager>.HasInstance)
+                if (logFileNamePrefix.Value.Trim() != "")
                 {
-                    __instance.Back();
+                    LogDiceResult(diceResult, sender, hidden);
                 }
-
-                NGuid thingThatIsTalking = NGuid.Empty;
-                if (LocalClient.SelectedCreatureId == CreatureGuid.Empty)
-                {
-                    thingThatIsTalking = LocalPlayer.Id.Value;
-                }
-                else
-                {
-                    thingThatIsTalking = LocalClient.SelectedCreatureId.Value;
-                }
-
-                ChatManager.SendChatMessage(text, thingThatIsTalking, null);
-                __instance.Back();
+                return true;
             }
         }
 
         [HarmonyPatch(typeof(ChatInputBoardTool), "Begin")]
         public static class PatchBegin
         {
-            public static bool Prefix()
-            {
-                return true;
-            }
-
             public static void Postfix()
             {
-                if (LocalClient.SelectedCreatureId == CreatureGuid.Empty)
-                {
-                    ChatInputBoardTool __instance = GameObject.FindObjectOfType<ChatInputBoardTool>();
-                    UIChatInputField _input = (UIChatInputField)PatchAssistant.GetField(__instance, "_input");
-                    PatchAssistant.UseMethod(_input, "UpdateSpeaker", new object[] { CampaignSessionManager.GetPlayerName(LocalPlayer.Id) });
-                }
+                if (ChatServicePlugin.diagnostics.Value >= DiagnosticSelection.high) { Debug.Log("Chat Service Plugin: Chat Entry Begin Prefix"); }
+                ChatServicePlugin.SetSpeaker();
             }
         }
 
-        private static ChatSource FindSource(string name)
+        [HarmonyPatch(typeof(CreatureBoardAsset), "Speak")]
+        public static class PatchSpeak
         {
-            if (name.ToUpper() == "ANONYMOUS") { return ChatSource.anonymous; }
+            public static bool Prefix(string text)
+            {
+                return !CheckIfHandlersApply(text);
+            }
+        }
+
+        #endregion
+
+        #region Helpers
+
+        private static void ApplyAliases(ref string message)
+        {
+            foreach(KeyValuePair<string,string> alias in aliases)
+            {
+                if (ChatServicePlugin.diagnostics.Value >= DiagnosticSelection.ultra) { Debug.Log("Chat Service Plugin: ApplyAliases: Replacing '" + alias.Key+"' with '"+alias.Value+"'"); }
+                message = message.Replace("/" + alias.Key, "/" + alias.Value);
+            }
+            if (ChatServicePlugin.diagnostics.Value >= DiagnosticSelection.high) { Debug.Log("Chat Service Plugin: ApplyAliases: Alias Message = '" + message + "'"); }
+        }
+
+        private static void ProcessMessage(ref string title, ref string message)
+        {
+            string creatureName = title;
+            if (ChatServicePlugin.diagnostics.Value >= DiagnosticSelection.ultra) { Debug.Log("Chat Service Plugin: ParseMessage: Title = '"+Convert.ToString(title)+"' Message = '"+Convert.ToString(message)+"'"); }
+            if (message.StartsWith("[") && message.Contains("]"))
+            {
+                title = message.Substring(1);
+                title = title.Substring(0, title.IndexOf("]"));
+                message = message.Substring(message.IndexOf("]") + 1).Trim();
+                if (ChatServicePlugin.diagnostics.Value >= DiagnosticSelection.ultra) { Debug.Log("Chat Service Plugin: ParseMessage: Header Adjustment: Title = '" + Convert.ToString(title) + "' Message = '" + Convert.ToString(message) + "'"); }
+            }
+            bool repeat;
+            do
+            {
+                repeat = false;
+                foreach (KeyValuePair<string, Func<string, string, Talespire.SourceRole, string>> handler in ChatServicePlugin.chatMessgeServiceHandlers)
+                {
+                    if (ChatServicePlugin.diagnostics.Value >= DiagnosticSelection.ultra) { Debug.Log("Chat Service Plugin: ParseMessage: Found Handler '" + handler.Key + "'"); }
+                    if (message.StartsWith(handler.Key))
+                    {
+                        if (ChatServicePlugin.diagnostics.Value >= DiagnosticSelection.high) { Debug.Log("Chat Service Plugin: ParseMessage: Applying Handler '" + handler.Key + "'"); }
+                        try 
+                        { 
+                            message = handler.Value(message, title, FindSource(creatureName)); 
+                        } 
+                        catch (Exception x)
+                        {
+                            Debug.LogWarning("Chat Service Plugin: ParseMessage: Exception In Handler: "+x.Message);
+                            Debug.LogException(x);
+                            message = "";
+                        }
+                        if (ChatServicePlugin.diagnostics.Value >= DiagnosticSelection.ultra) { Debug.Log("Chat Service Plugin: ParseMessage: Post Handler: Title = '" + Convert.ToString(title) + "' Message = '" + Convert.ToString(message) + "'"); }
+                        if (message == null) { return; }
+                        if (message.Trim() == "") { return; }
+                        repeat = true;
+                        break;
+                    }
+                }
+            } while (repeat);
+        }
+
+        private static bool CheckIfHandlersApply(string message)
+        {
+            foreach (KeyValuePair<string, Func<string, string, Talespire.SourceRole, string>> handler in ChatServicePlugin.chatMessgeServiceHandlers)
+            {
+                if (ChatServicePlugin.diagnostics.Value >= DiagnosticSelection.ultra) { Debug.Log("Chat Service Plugin: CheckIfHandlersApply: Handler: '" + handler.Key+"'"); }
+                if (message.StartsWith(handler.Key))
+                {
+                    if (ChatServicePlugin.diagnostics.Value >= DiagnosticSelection.ultra) { Debug.Log("Chat Service Plugin: CheckIfHandlersApply: Message Uses '"+handler.Key+"' Handler"); }
+                    return true;
+                }
+            }
+            if (ChatServicePlugin.diagnostics.Value >= DiagnosticSelection.ultra) { Debug.Log("Chat Service Plugin: CheckIfHandlersApply: Message Does Not Use Any Handler"); }
+            return false;
+        }
+
+        private static Talespire.SourceRole FindSource(string name)
+        {
+            if (name.ToUpper() == "ANONYMOUS") { return Talespire.SourceRole.anonymous; }
             foreach(CreatureBoardAsset asset in CreaturePresenter.AllCreatureAssets)
             {
-                if(asset.Creature.Name.StartsWith(name))
+                if(asset.Name.StartsWith(name))
                 {
-                    return ChatSource.creature;
+                    return Talespire.SourceRole.creature;
                 }
             }
             foreach (KeyValuePair<PlayerGuid, PlayerInfo> player in CampaignSessionManager.PlayersInfo)
             {
                 if(CampaignSessionManager.GetPlayerName(player.Key)==name)
                 {
-                    if (player.Value.Rights.CanGm) { return ChatSource.gm; } else { return ChatSource.player; }
+                    if (player.Value.Rights.CanGm) { return Talespire.SourceRole.gm; } else { return Talespire.SourceRole.player; }
                 }
             }
-            return ChatSource.other;
+            return Talespire.SourceRole.other;
         }
+
+        #endregion
     }
 }
